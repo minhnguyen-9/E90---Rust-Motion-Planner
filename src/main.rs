@@ -1,4 +1,4 @@
-use geo::{Contains, EuclideanDistance, Intersects, LineString, Point, Polygon};
+use geo::{Contains, EuclideanDistance, Intersects, LineString, Point, Polygon, Line};
 use plotters::prelude::*;
 
 // use geo::prelude::*;
@@ -157,30 +157,32 @@ fn main() {
         stroke_width: 2,
     };
 
-    let patches: Vec<Rectangle<_>> = rect_coords.iter().map(|(x_left, y_low, x_high, y_high)| {
-        Rectangle::new([(x_left, y_high), (x_high, y_low)], obstacle_style)
+    let patches: Vec<Rectangle<_>> = rect_coords.iter().map(|(x_left, y_low, x_right, y_high)| {
+        Rectangle::new([(x_left, y_high), (x_right, y_low)], obstacle_style)
     }).collect();
+//     chart.draw_series(LineSeries::new(
+//         (-314..314).map(|x| x as f64 / 100.0).map(|x| (x, x.sin())),
+//         &RED
+//     )).unwrap();
 
     chart
-        .draw_series(patches.iter().map(|r| {
-            (r.1, r.2), &RED
-        }))
+        .draw_series(patches.iter())
         .unwrap();
 
     chart
-        .draw_series(active_points[..tree_count].iter().map(|p| {
-            (Circle::new([p[0], p[1]], 3, Fill::Another("black")),)
+        .draw_series(tree_points.iter().map(|p| {
+            Circle::new((p.x() as i32, p.y() as i32), 3, &BLACK,)
         }))
         .unwrap();
 
     for (point_idx, parent_idx) in parents.iter().enumerate() {
         if *parent_idx >= 0 {
-            let x0 = active_points[*parent_idx][0];
-            let y0 = active_points[*parent_idx][1];
-            let x1 = active_points[point_idx][0];
-            let y1 = active_points[point_idx][1];
+            let x0 = tree_points[*parent_idx].x() as i32;
+            let y0 = tree_points[*parent_idx].y() as i32;
+            let x1 = tree_points[point_idx].x() as i32;
+            let y1 = tree_points[point_idx].y() as i32;
             chart
-                .draw_series(std::iter::once((Line::new([x0, y0], [x1, y1]),)))
+                .draw_series(std::iter::once(Line::new((x0, y0), (x1, y1))))
                 .unwrap();
         }
     }
