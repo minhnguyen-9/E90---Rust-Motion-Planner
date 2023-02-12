@@ -1,4 +1,4 @@
-use geo::{Contains, EuclideanDistance, Intersects, LineString, Point, Polygon, Line};
+use geo::{Contains, EuclideanDistance, Intersects, Line, LineString, Point, Polygon};
 use plotters::prelude::*;
 
 // use geo::prelude::*;
@@ -93,7 +93,7 @@ fn main() {
     tree_points.push(q_init);
     let mut parents = Vec::with_capacity(MAX_ITERATIONS);
 
-    let mut goal_idx  = None;
+    let mut goal_idx = None;
 
     for attempt in 0..MAX_ITERATIONS {
         // let mut q_rand: Point<f64>;
@@ -136,134 +136,64 @@ fn main() {
         }
     }
 
-    // let rects: Vec<Rectangle<f64>> = rect_coords
-    //     .iter()
-    //     .map(|(x0, y0, x1, y1)| Rectangle::new((*x0, *y0), *x1 - *x0, *y1 - *y0))
-    //     .collect();
-    // let active_points = &tree_points[..tree_count];
-
     let root = BitMapBackend::new("image.png", (1024, 1024)).into_drawing_area();
     root.fill(&WHITE).unwrap();
 
     let mut chart_context = ChartBuilder::on(&root);
     chart_context.caption("Example Plot", ("sans-serif", 30));
-    let chart = chart_context.build_cartesian_2d(0..8i32, 0..8i32).unwrap();
-    chart.configure_mesh().draw().unwrap();
+    let mut chart = chart_context.build_cartesian_2d(0.0..8.0f64, 0.0..8.0f64).unwrap();
+    // chart.configure_mesh().draw().unwrap();
 
+    // let obstacle_style = ShapeStyle {
+    //     color: BLUE.mix(0.6),
+    //     filled: true,
+    //     stroke_width: 2,
+    // };
 
-    let obstacle_style = ShapeStyle {
-        color: BLUE.mix(0.6),
-        filled: true,
-        stroke_width: 2,
-    };
+    // // Draw obstacle patches
+    // let patches: Vec<Rectangle<_>> = rect_coords
+    //     .iter()
+    //     .map(|(x_left, y_low, x_right, y_high)| {
+    //         Rectangle::new([(x_left, y_high), (x_right, y_low)], obstacle_style)
+    //     })
+    //     .collect();
 
-    let patches: Vec<Rectangle<_>> = rect_coords.iter().map(|(x_left, y_low, x_right, y_high)| {
-        Rectangle::new([(x_left, y_high), (x_right, y_low)], obstacle_style)
-    }).collect();
-//     chart.draw_series(LineSeries::new(
-//         (-314..314).map(|x| x as f64 / 100.0).map(|x| (x, x.sin())),
-//         &RED
-//     )).unwrap();
+    // chart.draw_series(patches.iter()).unwrap();
 
-    chart
-        .draw_series(patches.iter())
-        .unwrap();
-
-    chart
-        .draw_series(tree_points.iter().map(|p| {
-            Circle::new((p.x() as i32, p.y() as i32), 3, &BLACK,)
-        }))
-        .unwrap();
+    // chart
+    //     .draw_series(
+    //         tree_points
+    //             .iter()
+    //             .map(|p| Circle::new((p.x(), p.y()), 3, &BLACK)),
+    //     )
+    //     .unwrap();
 
     for (point_idx, parent_idx) in parents.iter().enumerate() {
         if *parent_idx >= 0 {
-            let x0 = tree_points[*parent_idx].x() as i32;
-            let y0 = tree_points[*parent_idx].y() as i32;
-            let x1 = tree_points[point_idx].x() as i32;
-            let y1 = tree_points[point_idx].y() as i32;
+            let x0 = tree_points[*parent_idx].x();
+            let y0 = tree_points[*parent_idx].y();
+            let x1 = tree_points[point_idx].x();
+            let y1 = tree_points[point_idx].y();
             chart
-                .draw_series(std::iter::once(Line::new((x0, y0), (x1, y1))))
+                .draw_series(LineSeries::new([(x1, y1), (x0, y0)], &RED))
                 .unwrap();
         }
     }
 
-    if let Some(goal_idx) = goal_idx {
-        let path_points = (0..)
-            .map(|idx| {
-                let i = goal_idx;
-                let p = active_points[i];
-                (p[0], p[1])
-            })
-            .take_while(|_| goal_idx >= 0)
-            .collect::<Vec<_>>();
-        chart
-            .draw_series(std::iter::once((
-                Path::new(path_points.into_iter(), &BLACK),
-            )))
-            .unwrap();
+    // if let Some(goal_idx) = goal_idx {
+    //     let path_points = (0..)
+    //         .map(|idx| {
+    //             let i = goal_idx;
+    //             let p = tree_points[i];
+    //             (p.x(), p.y())
+    //         })
+    //         .take_while(|_| goal_idx >= 0)
+    //         .collect::<Vec<_>>();
+
+    //     let example = LineSeries::new(path_points.iter().map(|p| (p.0, p.1)), &GREEN);
+    //     chart.draw_series(example).unwrap();
+
+    chart.configure_mesh().draw().unwrap();
+
     }
 
-    // chart.configure_mesh().draw().unwrap();
-
-
-
-}
-
-
-
-
-// fn plotting() {
-//     let root = BitMapBackend::new("image.png", (1024, 1024)).into_drawing_area();
-//     root.fill(&WHITE).unwrap();
-
-//     let mut chart = ChartBuilder::on(&root)
-//         .caption("Example Plot", ("sans-serif", 30))
-//         .build_cartesian_2d(-10.0, 10.0, -10.0, 10.0)
-//         .unwrap();
-
-//     let patches: Vec<Rectangle<_>> = rect_coords.iter().map(|(x0, y0, x1, y1)| {
-//         Rectangle::new([x0, y0], [(x1 - x0), (y1 - y0)], Shape::Rect)
-//     }).collect();
-
-//     chart
-//         .draw_series(patches.iter().map(|r| {
-//             (r, r.fill(&RED))
-//         }))
-//         .unwrap();
-
-//     chart
-//         .draw_series(active_points[..tree_count].iter().map(|p| {
-//             (Circle::new([p[0], p[1]], 3, Fill::Another("black")),)
-//         }))
-//         .unwrap();
-
-//     for (point_idx, parent_idx) in parents.iter().enumerate() {
-//         if *parent_idx >= 0 {
-//             let x0 = active_points[*parent_idx][0];
-//             let y0 = active_points[*parent_idx][1];
-//             let x1 = active_points[point_idx][0];
-//             let y1 = active_points[point_idx][1];
-//             chart
-//                 .draw_series(std::iter::once((Line::new([x0, y0], [x1, y1]),)))
-//                 .unwrap();
-//         }
-//     }
-
-//     if let Some(goal_idx) = goal_idx {
-//         let path_points = (0..)
-//             .map(|idx| {
-//                 let i = goal_idx;
-//                 let p = active_points[i];
-//                 (p[0], p[1])
-//             })
-//             .take_while(|_| goal_idx >= 0)
-//             .collect::<Vec<_>>();
-//         chart
-//             .draw_series(std::iter::once((
-//                 Path::new(path_points.into_iter(), &BLACK),
-//             )))
-//             .unwrap();
-//     }
-
-//     chart.configure_mesh().draw().unwrap();
-// }
