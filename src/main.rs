@@ -4,6 +4,8 @@ use plotters::{element::BackendCoordOnly, prelude::*};
 const MAX_ITERATIONS: usize = 1000;
 const SEGMENT_LENGTH: f64 = 0.1;
 
+type Backend<'a> = SVGBackend<'a>;
+
 fn point_is_free(obstacle_polygons: &Vec<Polygon<f64>>, point_coords: &Point<f64>) -> bool {
     let point = Point::new(point_coords.x(), point_coords.y());
 
@@ -33,7 +35,7 @@ fn segment_is_free(
 }
 
 fn main() {
-    let rect_coords = vec![(2.0, 2.0, 6.0, 6.0)];
+    let rect_coords = vec![(2.0, 2.0, 6.0, 6.0), (3.0, 1.0, 4.0, 2.0), (1.0,1.0,2.0,2.0)];
 
     let q_init = Point::new(1.0, 7.0);
     let q_goal = Point::new(7.0, 1.0);
@@ -117,7 +119,12 @@ fn main() {
         }
     }
 
-    let root = BitMapBackend::new("image.png", (1024, 1024)).into_drawing_area();
+    //plotting
+
+   
+
+    let root = Backend::new("image2.svg", (1024, 1024)).into_drawing_area();
+
     root.fill(&WHITE).unwrap();
 
     let mut chart_context = ChartBuilder::on(&root);
