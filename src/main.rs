@@ -1,10 +1,12 @@
 use geo::{Contains, Intersects, LineString, Point, Polygon};
-use plotters::{element::BackendCoordOnly, prelude::*};
+// use plotters::{element::BackendCoordOnly, prelude::*};
+mod graph3d;
+use graph3d::Point2;
 
-const MAX_ITERATIONS: usize = 1000;
+const MAX_ITERATIONS: usize = 10000;
 const SEGMENT_LENGTH: f64 = 0.1;
 
-type Backend<'a> = SVGBackend<'a>;
+// type Backend<'a> = SVGBackend<'a>;
 
 fn point_is_free(obstacle_polygons: &Vec<Polygon<f64>>, point_coords: &Point<f64>) -> bool {
     let point = Point::new(point_coords.x(), point_coords.y());
@@ -35,7 +37,11 @@ fn segment_is_free(
 }
 
 fn main() {
-    let rect_coords = vec![(2.0, 2.0, 6.0, 6.0), (3.0, 1.0, 4.0, 2.0), (1.0,1.0,2.0,2.0)];
+    let rect_coords = vec![
+        (2.0, 2.0, 6.0, 6.0),
+        (3.0, 1.0, 4.0, 2.0),
+        (1.0, 1.0, 2.0, 2.0),
+    ]; // These points goes x: left to right 0...8, y: bottom to top 0...8
 
     let q_init = Point::new(1.0, 7.0);
     let q_goal = Point::new(7.0, 1.0);
@@ -119,69 +125,86 @@ fn main() {
         }
     }
 
-    //plotting
-
-   
-
-    let root = Backend::new("image2.svg", (1024, 1024)).into_drawing_area();
-
-    root.fill(&WHITE).unwrap();
-
-    let mut chart_context = ChartBuilder::on(&root);
-    chart_context.caption("Example Plot", ("sans-serif", 30));
-    let mut chart = chart_context
-        .build_cartesian_2d(0.0..8.0f64, 0.0..8.0f64)
-        .unwrap();
-    // chart.configure_mesh().draw().unwrap();
-
-    let obstacle_style = ShapeStyle {
-        color: BLUE.mix(0.6),
-        filled: true,
-        stroke_width: 2,
-    };
-
-    // Draw obstacle patches
-    let patches: Vec<Rectangle<(f64, f64)>> = rect_coords
-        .iter()
-        .map(|(x_left, y_low, x_right, y_high)| {
-            Rectangle::new([(*x_left, *y_high), (*x_right, *y_low)], obstacle_style)
-        })
-        .collect();
-
-    chart
-        .draw_series::<BackendCoordOnly, Rectangle<(f64, f64)>, _, _>(patches.iter())
-        .unwrap();
-
-    chart
-        .draw_series(
-            tree_points
-                .iter()
-                .map(|p| Circle::new((p.x(), p.y()), 3, &BLACK)),
-        )
-        .unwrap();
-
-    for (point_idx, parent_idx) in parents.iter().enumerate() {
-        let x0 = tree_points[*parent_idx].x();
-        let y0 = tree_points[*parent_idx].y();
-        let x1 = tree_points[point_idx].x();
-        let y1 = tree_points[point_idx].y();
-        chart
-            .draw_series(LineSeries::new([(x0, y0), (x1, y1)], &YELLOW))
-            .unwrap();
-    }
-
     if let Some(mut current_idx) = goal_idx {
         let mut path = vec![];
         while current_idx != 0 {
             let p = tree_points[current_idx];
-            path.push((p.x(), p.y()));
+            path.push(Point2 { x: p.x() as _, y: p.y() as _ });
             current_idx = parents[current_idx];
         }
         let p = tree_points[current_idx];
-        path.push((p.x(), p.y()));
+        path.push(Point2 { x: p.x() as _, y: p.y() as _ });
 
-        let example = LineSeries::new(path.iter().map(|p| (p.0, p.1)), &BLUE);
-        chart.draw_series(example).unwrap();
+        // 3D graphing with glium
+        graph3d::graph3d(path);
+        
+        // println!("polygons: {:?}", path);
+    } else {
+        println!("No goal");
     }
-    chart.configure_mesh().draw().unwrap();
+
+
+    //2D plotting with plotters
+
+    // let root = Backend::new("image2.svg", (1024, 1024)).into_drawing_area();
+
+    // root.fill(&WHITE).unwrap();
+
+    // let mut chart_context = ChartBuilder::on(&root);
+    // chart_context.caption("Example Plot", ("sans-serif", 30));
+    // let mut chart = chart_context
+    //     .build_cartesian_2d(0.0..8.0f64, 0.0..8.0f64)
+    //     .unwrap();
+    // // chart.configure_mesh().draw().unwrap();
+
+    // let obstacle_style = ShapeStyle {
+    //     color: BLUE.mix(0.6),
+    //     filled: true,
+    //     stroke_width: 2,
+    // };
+
+    // // Draw obstacle patches
+    // let patches: Vec<Rectangle<(f64, f64)>> = rect_coords
+    //     .iter()
+    //     .map(|(x_left, y_low, x_right, y_high)| {
+    //         Rectangle::new([(*x_left, *y_high), (*x_right, *y_low)], obstacle_style)
+    //     })
+    //     .collect();
+
+    // chart
+    //     .draw_series::<BackendCoordOnly, Rectangle<(f64, f64)>, _, _>(patches.iter())
+    //     .unwrap();
+
+    // chart
+    //     .draw_series(
+    //         tree_points
+    //             .iter()
+    //             .map(|p| Circle::new((p.x(), p.y()), 3, &BLACK)),
+    //     )
+    //     .unwrap();
+
+    // for (point_idx, parent_idx) in parents.iter().enumerate() {
+    //     let x0 = tree_points[*parent_idx].x();
+    //     let y0 = tree_points[*parent_idx].y();
+    //     let x1 = tree_points[point_idx].x();
+    //     let y1 = tree_points[point_idx].y();
+    //     chart
+    //         .draw_series(LineSeries::new([(x0, y0), (x1, y1)], &YELLOW))
+    //         .unwrap();
+    // }
+
+    // if let Some(mut current_idx) = goal_idx {
+    //     let mut path = vec![];
+    //     while current_idx != 0 {
+    //         let p = tree_points[current_idx];
+    //         path.push((p.x(), p.y()));
+    //         current_idx = parents[current_idx];
+    //     }
+    //     let p = tree_points[current_idx];
+    //     path.push((p.x(), p.y()));
+
+    //     let example = LineSeries::new(path.iter().map(|p| (p.0, p.1)), &BLUE);
+    //     chart.draw_series(example).unwrap();
+    // }
+    // chart.configure_mesh().draw().unwrap();
 }

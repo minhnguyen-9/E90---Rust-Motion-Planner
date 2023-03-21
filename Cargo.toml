@@ -12,15 +12,15 @@ glium = "0.32.1"
 rand = "0.8.5"
 
 
-[[bin]]
-name = "main"
-src = "src/main.rs"
+# [[bin]]
+# name = "main"
+# src = "src/main.rs"
 
-[[bin]]
-name = "3dgraph"
-src = "src/3dgraph.rs"
+# [[bin]]
+# name = "3dgraph"
+# src = "src/3dgraph.rs"
 
-[[bin]]
-name = "sync_data"
-src = "src/sync_data.rs"
+# [[bin]]
+# name = "sync_data"
+# src = "src/sync_data.rs"
 

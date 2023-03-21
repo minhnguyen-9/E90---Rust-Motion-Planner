@@ -1,8 +1,39 @@
+use std::iter::Scan;
+
 use glium::{glutin, implement_vertex, uniform, Surface};
 mod sync_data;
 // mod sync_data;
+const SCALE : f32 = 0.01;
 
-fn main() {
+
+pub struct Point3 {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+#[derive(Debug)]
+pub struct Point2 {
+    pub x: f32,
+    pub y: f32,
+}
+
+pub trait As3d {
+    fn as_3d(&self) -> (f32, f32, f32);
+}
+
+impl As3d for Point3 {
+    fn as_3d(&self) -> (f32, f32, f32) {
+        (self.x, self.y, self.z)
+    }
+}
+
+impl As3d for Point2 {
+    fn as_3d(&self) -> (f32, f32, f32) {
+        (self.x, self.y, 0.0)
+    }
+}
+
+pub fn graph3d<T: As3d + 'static>(path: Vec<T>) {
     #[allow(unused_imports)]
     use glium::{glutin, Surface};
 
@@ -30,12 +61,16 @@ fn main() {
     .unwrap();
     let normals2 = glium::VertexBuffer::new(&display, &sync_data::NORMALS2).unwrap();
 
-    let path = [
-        [0.5, 0.2, 0.0],
-        [0.2, 0.01, 0.0],
-        [0.4, 0.15, 0.01],
-        [0.3, 0.2, 0.0f32],
-    ];
+    // let path = [
+    //     [0.0, 0.0, 0.0],
+    //     [0.0, 0.0, 0.0],
+    //     [-0.3, 0.4, 0.3],
+    //     [-0.1, -0.3, 0.0],
+    //     [0.5, 0.2, 0.0],
+    //     [0.2, 0.01, 0.0],
+    //     [0.4, 0.15, 0.01],
+    //     [0.3, 0.2, 0.0f32],
+    // ];
 
     let vertex_shader_src = r#"
         #version 150
@@ -97,7 +132,8 @@ fn main() {
         glium::Program::from_source(&display, vertex_shader_src2, fragment_shader_src2, None)
             .unwrap();
 
-    let mut path_index = 0;
+    // let mut path_index = 0;
+    let mut path_index = path.len()-1;
 
     event_loop.run(move |event, _, control_flow| {
         let next_frame_time =
@@ -129,19 +165,24 @@ fn main() {
             [0.0, 0.0, 0.01, 0.0],
             [0.0, 0.0, 0.0, 1.0f32],
         ];
-        if path_index >= path.len()-1 {
-            path_index = 0;
-        }else{
-            path_index += 1;
+        // if path_index >= path.len() - 1 {
+        //     path_index = 0;
+        // } else {
+        //     path_index += 1;
+        // }
+        if path_index <= 1{
+            path_index = path.len() -1;
+        } else {
+            path_index -= 1;
         }
-        
-        let t = path[path_index];
+
+        let (x, y, z) = path[path_index].as_3d();
 
         let matrix2 = [
             [0.01, 0.0, 0.0, 0.0],
             [0.0, 0.01, 0.0, 0.0],
             [0.0, 0.0, 0.01, 0.0],
-            [t[0], t[1], t[2], 1.0f32],
+            [(-100.0+x*25.0)* SCALE, (-100.0+y*25.0) *SCALE, z *SCALE, 1.0f32],
         ];
 
         let light = [-1.0, 0.4, 0.9f32];
