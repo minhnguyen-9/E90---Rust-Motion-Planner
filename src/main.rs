@@ -90,8 +90,10 @@ fn main() {
         let r: f64 = rand::random();
 
         let q_rand = if r <= 0.01 {
+            // random point becomes the goal point so that the tree grows toward the the goal point
             q_goal
         } else {
+            // random point is randon on the plane
             Point::new(rand::random::<f64>() * 8.0, rand::random::<f64>() * 8.0)
         };
 
@@ -104,10 +106,11 @@ fn main() {
                 (p, diff, dist_square)
             })
             .enumerate()
-            //min_by compares the 2 elements splitted out by enumerate exp: (idx1,dist1), (idx2,dist2). d1.partial compare gives you the signs/ordering
+            //min_by compares the 2 elements splitted out by enumerate exp: (idx1,dist1), (idx2,dist2). dist1.partial compare gives you the signs/ordering
             .min_by(|(_, a), (_, b)| a.2.partial_cmp(&b.2).expect("can't compare distances"))
             .expect("no starting points in tree points");
-
+        
+        //Check and make sure to grow a new branch on the tree according to the maximum segment length
         let q_new: Point<f64> = if dist_square < SEGMENT_LENGTH.powi(2) {
             q_rand
         } else {
@@ -125,6 +128,7 @@ fn main() {
         }
     }
 
+    // Retrieve the path from the goal point to start point. Append them to a path array: Goal...start
     if let Some(mut current_idx) = goal_idx {
         let mut path = vec![];
         while current_idx != 0 {
@@ -137,7 +141,7 @@ fn main() {
 
         // 3D graphing with glium
         graph3d::graph3d(path);
-        
+
         // println!("polygons: {:?}", path);
     } else {
         println!("No goal");
