@@ -2,6 +2,8 @@ use geo::{Contains, Intersects, LineString, Point, Polygon};
 // use plotters::{element::BackendCoordOnly, prelude::*};
 mod graph3d;
 use graph3d::Point2;
+// use tests::Obstacle;
+mod tests;
 
 const MAX_ITERATIONS: usize = 10000;
 const SEGMENT_LENGTH: f64 = 0.1;
@@ -37,18 +39,27 @@ fn segment_is_free(
 }
 
 fn main() {
-    let rect_coords = vec![
-        (2.0, 2.0, 6.0, 6.0),
-        (3.0, 1.0, 4.0, 2.0),
-        (1.0, 1.0, 2.0, 2.0),
-    ]; // These points goes x: left to right 0...8, y: bottom to top 0...8
+    let filepath = "src/bin/obstacles.txt";
+    let obstacles_coords = tests::obstacle_parser_geo(filepath).expect("can't parse for obstacle for geo");
+    println!("obstacles {:?}", obstacles_coords);
 
-    let q_init = Point::new(1.0, 7.0);
-    let q_goal = Point::new(7.0, 1.0);
+    // let rect_coords = vec![
+    //     (2.0, 2.0, 6.0, 6.0),
+    //     (3.0, 1.0, 4.0, 2.0),
+    //     (1.0, 1.0, 2.0, 2.0),
+    // ]; // These points goes x: left to right 0...8, y: bottom to top 0...8
+
+    // let q_init = Point::new(1.0, 7.0);
+    // let q_goal = Point::new(7.0, 1.0);
+
+    let (x1,x2,g1,g2) = obstacles_coords[0].clone();
+    let q_init = Point::new(x1, x2);
+    let q_goal = Point::new(g1, g2);
+
 
     let mut obstacle_polygons: Vec<Polygon<f64>> = Vec::new();
 
-    for (x0, y0, x1, y1) in rect_coords.iter().copied() {
+    for (x0, y0, x1, y1) in obstacles_coords.iter().skip(1).copied() {
         let points = vec![
             Point::new(x0, y0),
             Point::new(x1, y0),
@@ -60,7 +71,7 @@ fn main() {
         obstacle_polygons.push(polygon);
     }
 
-    println!("polygons: {:?}", obstacle_polygons[0]);
+    println!("polygons: {:?}", obstacle_polygons);
 
     println!(
         "should be True: {}",

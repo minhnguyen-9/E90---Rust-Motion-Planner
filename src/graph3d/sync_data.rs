@@ -6,6 +6,9 @@ use glium::implement_vertex;
 
 implement_vertex!(Vertex, position);
 
+// These points goes x: left to right 0...8, y: bottom to top 0...8
+// -100 + point*25: Formula to transform from obstacle (only for obstacle) in 2d cordinates to glium cordinates
+
 // x location of the vertex goes from left to right of the screen: -100 .... 100
 // y location of vertex goes from top to bottom: 100...-100
 
