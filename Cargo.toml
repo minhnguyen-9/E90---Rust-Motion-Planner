@@ -8,6 +8,8 @@ edition = "2021"
 [dependencies]
 geo = "0.23.1"
 glium = "0.32.1"
+nalgebra = "0.32.2"
+parry2d = "0.13.3"
 # plotters = "0.3.4"
 rand = "0.8.5"
 serde = { version = "1.0.158", features = ["derive"] }

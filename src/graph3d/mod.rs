@@ -2,6 +2,7 @@ use std::iter::Scan;
 
 use glium::{glutin, implement_vertex, uniform, Surface};
 mod sync_data;
+mod parser_glium;
 // mod sync_data;
 const SCALE : f32 = 0.01;
 
@@ -42,17 +43,22 @@ pub fn graph3d<T: As3d + 'static>(path: Vec<T>) {
     let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
-    let positions = glium::VertexBuffer::new(&display, &sync_data::VERTICES).unwrap();
+    let filepath = "src/bin/obstacles.txt";
+    let vertices = parser_glium::obstacle_parser_glium(&filepath).expect("can't parse in obstacle vertices");
+    let connecting_indices = parser_glium::obstacle_parser_find_connecting_indices(vertices.len()/4)
+    .expect("can't parse in obstacle connecting vertices");
+
+    let positions = glium::VertexBuffer::new(&display, &vertices).unwrap();
     let normals = glium::VertexBuffer::new(&display, &sync_data::NORMALS).unwrap();
     let indices = glium::IndexBuffer::new(
         &display,
         glium::index::PrimitiveType::TrianglesList,
-        &sync_data::INDICES,
+        &connecting_indices,
     )
     .unwrap();
 
     let robot = glium::VertexBuffer::new(&display, &sync_data::ROBOT).expect("no robot found");
-    //let path = glium::VertexBuffer::new(&display, &sync_data::PATHS).expect("no paths found");
+    //let path = glium::VertexBuffer::new(&display, &sync_data::PATHS).expect("no paths found"); // this is for reading in from sync_data
     let indices2 = glium::IndexBuffer::new(
         &display,
         glium::index::PrimitiveType::TrianglesList,
@@ -60,17 +66,6 @@ pub fn graph3d<T: As3d + 'static>(path: Vec<T>) {
     )
     .unwrap();
     let normals2 = glium::VertexBuffer::new(&display, &sync_data::NORMALS2).unwrap();
-
-    // let path = [
-    //     [0.0, 0.0, 0.0],
-    //     [0.0, 0.0, 0.0],
-    //     [-0.3, 0.4, 0.3],
-    //     [-0.1, -0.3, 0.0],
-    //     [0.5, 0.2, 0.0],
-    //     [0.2, 0.01, 0.0],
-    //     [0.4, 0.15, 0.01],
-    //     [0.3, 0.2, 0.0f32],
-    // ];
 
     let vertex_shader_src = r#"
         #version 150
@@ -165,11 +160,7 @@ pub fn graph3d<T: As3d + 'static>(path: Vec<T>) {
             [0.0, 0.0, 0.01, 0.0],
             [0.0, 0.0, 0.0, 1.0f32],
         ];
-        // if path_index >= path.len() - 1 {
-        //     path_index = 0;
-        // } else {
-        //     path_index += 1;
-        // }
+
         if path_index <= 1{
             path_index = path.len() -1;
         } else {

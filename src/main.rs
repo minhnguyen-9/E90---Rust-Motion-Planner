@@ -4,6 +4,7 @@ mod graph3d;
 use graph3d::Point2;
 // use tests::Obstacle;
 mod tests;
+mod parry2d_zucker;
 
 const MAX_ITERATIONS: usize = 10000;
 const SEGMENT_LENGTH: f64 = 0.1;
@@ -42,6 +43,9 @@ fn main() {
     let filepath = "src/bin/obstacles.txt";
     let obstacles_coords = tests::obstacle_parser_geo(filepath).expect("can't parse for obstacle for geo");
     println!("obstacles {:?}", obstacles_coords);
+
+    // let whatever = parry2d_zucker::parry_tst()?;
+
 
     // let rect_coords = vec![
     //     (2.0, 2.0, 6.0, 6.0),
