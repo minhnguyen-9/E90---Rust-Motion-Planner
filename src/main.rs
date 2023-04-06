@@ -3,19 +3,43 @@ use geo::{Contains, Intersects, LineString, Point, Polygon};
 mod graph3d;
 use graph3d::Point2;
 // use tests::Obstacle;
-mod tests;
 mod parry2d_zucker;
+mod tests;
+use nalgebra::UnitComplex;
+use parry2d::na::{Isometry2, Vector2};
+use parry2d::query::contact::{contact, contact_support_map_support_map};
+use parry2d::shape::{Ball, Cuboid, Segment};
+
+extern crate nalgebra as na;
 
 const MAX_ITERATIONS: usize = 10000;
-const SEGMENT_LENGTH: f64 = 0.1;
+const SEGMENT_LENGTH: f32 = 0.1;
+const POINT_RADIUS: f32 = 0.1;
 
 // type Backend<'a> = SVGBackend<'a>;
 
-fn point_is_free(obstacle_polygons: &Vec<Polygon<f64>>, point_coords: &Point<f64>) -> bool {
-    let point = Point::new(point_coords.x(), point_coords.y());
+// fn point_is_free(obstacle_polygons: &Vec<Polygon<f64>>, point_coords: &Point<f64>) -> bool {
+//     let point = Point::new(point_coords.x(), point_coords.y());
 
-    for p in obstacle_polygons {
-        if p.contains(&point) {
+//     for p in obstacle_polygons {
+//         if p.contains(&point) {
+//             return false;
+//         }
+//     }
+
+//     true
+// }
+
+fn point_is_free(
+    obstacle_polygons: &Vec<(Cuboid, Isometry2<f32>)>,
+    point_coords: &Point<f32>,
+) -> bool {
+    let point = Ball::new(POINT_RADIUS);
+    let point_pos = Isometry2::new(Vector2::new(point_coords.x(), point_coords.y()), 0.0);
+
+    for (shape, position) in obstacle_polygons.iter() {
+        let touching = contact(position, shape, &point_pos, &point, 0.0);
+        if touching.unwrap() != None {
             return false;
         }
     }
@@ -23,15 +47,37 @@ fn point_is_free(obstacle_polygons: &Vec<Polygon<f64>>, point_coords: &Point<f64
     true
 }
 
-fn segment_is_free(
-    obstacle_polygons: &Vec<Polygon<f64>>,
-    start_coords: &Point<f64>,
-    end_coords: &Point<f64>,
-) -> bool {
-    let lstr = LineString::from(vec![*start_coords, *end_coords]);
+// fn segment_is_free(
+//     obstacle_polygons: &Vec<Polygon<f64>>,
+//     start_coords: &Point<f64>,
+//     end_coords: &Point<f64>,
+// ) -> bool {
+//     let lstr = LineString::from(vec![*start_coords, *end_coords]);
 
-    for p in obstacle_polygons {
-        if p.intersects(&lstr) {
+//     for p in obstacle_polygons {
+//         if p.intersects(&lstr) {
+//             return false;
+//         }
+//     }
+
+//     true
+// }
+fn segment_is_free(
+    obstacle_polygons: &Vec<(Cuboid, Isometry2<f32>)>,
+    point_from: &Point<f32>,
+    point_to: &Point<f32>,
+) -> bool {
+    // let point = Ball::new(POINT_RADIUS);
+    let line = Segment::new(
+        na::Point2::new(point_from.x(), point_from.y()),
+        na::Point2::new(point_to.x(), point_to.y()),
+    );
+    // let point_pos = Isometry2::new(Vector2::new(point_coords.x(), point_coords.y()), 0.0);
+    let absolute_zeros = Isometry2::new(Vector2::new(0.0, 0.0), 0.0);
+
+    for (shape, position) in obstacle_polygons.iter() {
+        let touching = contact(position, shape, &absolute_zeros, &line, 0.0);
+        if touching.unwrap() != None {
             return false;
         }
     }
@@ -41,11 +87,11 @@ fn segment_is_free(
 
 fn main() {
     let filepath = "src/bin/obstacles.txt";
-    let obstacles_coords = tests::obstacle_parser_geo(filepath).expect("can't parse for obstacle for geo");
+    let obstacles_coords =
+        tests::obstacle_parser_geo(filepath).expect("can't parse for obstacle for geo");
     println!("obstacles {:?}", obstacles_coords);
 
     // let whatever = parry2d_zucker::parry_tst()?;
-
 
     // let rect_coords = vec![
     //     (2.0, 2.0, 6.0, 6.0),
@@ -56,23 +102,30 @@ fn main() {
     // let q_init = Point::new(1.0, 7.0);
     // let q_goal = Point::new(7.0, 1.0);
 
-    let (x1,x2,g1,g2) = obstacles_coords[0].clone();
-    let q_init = Point::new(x1, x2);
-    let q_goal = Point::new(g1, g2);
+    let (x1, x2, g1, g2) = obstacles_coords[0].clone();
+    let q_init = Point::new(x1 as f32, x2 as f32);
+    let q_goal = Point::new(g1 as f32, g2 as f32);
 
+    let mut obstacle_polygons: Vec<(Cuboid, Isometry2<f32>)> = Vec::new();
 
-    let mut obstacle_polygons: Vec<Polygon<f64>> = Vec::new();
-
+    // skip(1) because we already extracted the first line for start and goal cordinates
     for (x0, y0, x1, y1) in obstacles_coords.iter().skip(1).copied() {
-        let points = vec![
-            Point::new(x0, y0),
-            Point::new(x1, y0),
-            Point::new(x1, y1),
-            Point::new(x0, y1),
-        ];
+        // let points = vec![
+        //     Point::new(x0, y0),
+        //     Point::new(x1, y0),
+        //     Point::new(x1, y1),
+        //     Point::new(x0, y1),
+        // ];
+        // let polygon = Polygon::new(LineString::from(points), vec![]);
 
-        let polygon = Polygon::new(LineString::from(points), vec![]);
-        obstacle_polygons.push(polygon);
+        // Location takes into account that cuboid is created at the origin, hence the translation needs to be the mid point
+        // of the cuboids.
+        let half_x = (x1 as f32 - x2 as f32) / 2.0;
+        let half_y = (y1 as f32 - y0 as f32) / 2.0;
+        let shape = Cuboid::new(Vector2::new(half_x, half_y));
+        let location = Isometry2::new(Vector2::new(x0 as f32 + half_x, y0 as f32 + half_y), 0.0);
+
+        obstacle_polygons.push((shape, location));
     }
 
     println!("polygons: {:?}", obstacle_polygons);
@@ -109,7 +162,7 @@ fn main() {
             q_goal
         } else {
             // random point is randon on the plane
-            Point::new(rand::random::<f64>() * 8.0, rand::random::<f64>() * 8.0)
+            Point::new(rand::random::<f32>() * 8.0, rand::random::<f32>() * 8.0)
         };
 
         let (idx, (p_closest_to_rand, diff, dist_square)) = tree_points
@@ -124,9 +177,9 @@ fn main() {
             //min_by compares the 2 elements splitted out by enumerate exp: (idx1,dist1), (idx2,dist2). dist1.partial compare gives you the signs/ordering
             .min_by(|(_, a), (_, b)| a.2.partial_cmp(&b.2).expect("can't compare distances"))
             .expect("no starting points in tree points");
-        
+
         //Check and make sure to grow a new branch on the tree according to the maximum segment length
-        let q_new: Point<f64> = if dist_square < SEGMENT_LENGTH.powi(2) {
+        let q_new: Point<f32> = if dist_square < SEGMENT_LENGTH.powi(2) {
             q_rand
         } else {
             *p_closest_to_rand + diff * SEGMENT_LENGTH / dist_square.sqrt()
@@ -148,11 +201,17 @@ fn main() {
         let mut path = vec![];
         while current_idx != 0 {
             let p = tree_points[current_idx];
-            path.push(Point2 { x: p.x() as _, y: p.y() as _ });
+            path.push(Point2 {
+                x: p.x() as _,
+                y: p.y() as _,
+            });
             current_idx = parents[current_idx];
         }
         let p = tree_points[current_idx];
-        path.push(Point2 { x: p.x() as _, y: p.y() as _ });
+        path.push(Point2 {
+            x: p.x() as _,
+            y: p.y() as _,
+        });
 
         // 3D graphing with glium
         graph3d::graph3d(path);
@@ -161,69 +220,4 @@ fn main() {
     } else {
         println!("No goal");
     }
-
-
-    //2D plotting with plotters
-
-    // let root = Backend::new("image2.svg", (1024, 1024)).into_drawing_area();
-
-    // root.fill(&WHITE).unwrap();
-
-    // let mut chart_context = ChartBuilder::on(&root);
-    // chart_context.caption("Example Plot", ("sans-serif", 30));
-    // let mut chart = chart_context
-    //     .build_cartesian_2d(0.0..8.0f64, 0.0..8.0f64)
-    //     .unwrap();
-    // // chart.configure_mesh().draw().unwrap();
-
-    // let obstacle_style = ShapeStyle {
-    //     color: BLUE.mix(0.6),
-    //     filled: true,
-    //     stroke_width: 2,
-    // };
-
-    // // Draw obstacle patches
-    // let patches: Vec<Rectangle<(f64, f64)>> = rect_coords
-    //     .iter()
-    //     .map(|(x_left, y_low, x_right, y_high)| {
-    //         Rectangle::new([(*x_left, *y_high), (*x_right, *y_low)], obstacle_style)
-    //     })
-    //     .collect();
-
-    // chart
-    //     .draw_series::<BackendCoordOnly, Rectangle<(f64, f64)>, _, _>(patches.iter())
-    //     .unwrap();
-
-    // chart
-    //     .draw_series(
-    //         tree_points
-    //             .iter()
-    //             .map(|p| Circle::new((p.x(), p.y()), 3, &BLACK)),
-    //     )
-    //     .unwrap();
-
-    // for (point_idx, parent_idx) in parents.iter().enumerate() {
-    //     let x0 = tree_points[*parent_idx].x();
-    //     let y0 = tree_points[*parent_idx].y();
-    //     let x1 = tree_points[point_idx].x();
-    //     let y1 = tree_points[point_idx].y();
-    //     chart
-    //         .draw_series(LineSeries::new([(x0, y0), (x1, y1)], &YELLOW))
-    //         .unwrap();
-    // }
-
-    // if let Some(mut current_idx) = goal_idx {
-    //     let mut path = vec![];
-    //     while current_idx != 0 {
-    //         let p = tree_points[current_idx];
-    //         path.push((p.x(), p.y()));
-    //         current_idx = parents[current_idx];
-    //     }
-    //     let p = tree_points[current_idx];
-    //     path.push((p.x(), p.y()));
-
-    //     let example = LineSeries::new(path.iter().map(|p| (p.0, p.1)), &BLUE);
-    //     chart.draw_series(example).unwrap();
-    // }
-    // chart.configure_mesh().draw().unwrap();
 }

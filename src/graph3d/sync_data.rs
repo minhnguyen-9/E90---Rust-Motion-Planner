@@ -47,7 +47,7 @@ pub const VERTICES: [Vertex; 5] = [
         position: (50.00, -50.00, -1.10804),
     },
     Vertex {
-        position: (-50.00,50.00,-1.10804),
+        position: (-50.00, 50.00, -1.10804),
     },
 ];
 
@@ -56,7 +56,7 @@ pub const VERTICES: [Vertex; 5] = [
 // (1.0, 1.0, 2.0, 2.0),
 
 // -100 + point*25: Formula to transform from obstacle (only for obstacle) in 2d cordinates to glium cordinates
- 
+
 #[derive(Copy, Clone)]
 pub struct Normal {
     normal: (f32, f32, f32),
@@ -121,7 +121,6 @@ pub const NORMALS2: [Normal; 4] = [
 pub const INDICES: [u16; 6] = [1, 2, 3, 1, 4, 2u16];
 
 pub const INDICES2: [u16; 3] = [1, 2, 3u16];
-
 
 // pub const VERTICES: [Vertex; 10] = [
 //     Vertex {

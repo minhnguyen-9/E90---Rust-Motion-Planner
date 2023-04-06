@@ -1,11 +1,10 @@
 use std::iter::Scan;
 
 use glium::{glutin, implement_vertex, uniform, Surface};
-mod sync_data;
 mod parser_glium;
+mod sync_data;
 // mod sync_data;
-const SCALE : f32 = 0.01;
-
+const SCALE: f32 = 0.01;
 
 pub struct Point3 {
     pub x: f32,
@@ -44,9 +43,11 @@ pub fn graph3d<T: As3d + 'static>(path: Vec<T>) {
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
     let filepath = "src/bin/obstacles.txt";
-    let vertices = parser_glium::obstacle_parser_glium(&filepath).expect("can't parse in obstacle vertices");
-    let connecting_indices = parser_glium::obstacle_parser_find_connecting_indices(vertices.len()/4)
-    .expect("can't parse in obstacle connecting vertices");
+    let vertices =
+        parser_glium::obstacle_parser_glium(&filepath).expect("can't parse in obstacle vertices");
+    let connecting_indices =
+        parser_glium::obstacle_parser_find_connecting_indices(vertices.len() / 4)
+            .expect("can't parse in obstacle connecting vertices");
 
     let positions = glium::VertexBuffer::new(&display, &vertices).unwrap();
     let normals = glium::VertexBuffer::new(&display, &sync_data::NORMALS).unwrap();
@@ -128,7 +129,7 @@ pub fn graph3d<T: As3d + 'static>(path: Vec<T>) {
             .unwrap();
 
     // let mut path_index = 0;
-    let mut path_index = path.len()-1;
+    let mut path_index = path.len() - 1;
 
     event_loop.run(move |event, _, control_flow| {
         let next_frame_time =
@@ -161,8 +162,8 @@ pub fn graph3d<T: As3d + 'static>(path: Vec<T>) {
             [0.0, 0.0, 0.0, 1.0f32],
         ];
 
-        if path_index <= 1{
-            path_index = path.len() -1;
+        if path_index <= 1 {
+            path_index = path.len() - 1;
         } else {
             path_index -= 1;
         }
@@ -173,7 +174,12 @@ pub fn graph3d<T: As3d + 'static>(path: Vec<T>) {
             [0.01, 0.0, 0.0, 0.0],
             [0.0, 0.01, 0.0, 0.0],
             [0.0, 0.0, 0.01, 0.0],
-            [(-100.0+x*25.0)* SCALE, (-100.0+y*25.0) *SCALE, z *SCALE, 1.0f32],
+            [
+                (-100.0 + x * 25.0) * SCALE,
+                (-100.0 + y * 25.0) * SCALE,
+                z * SCALE,
+                1.0f32,
+            ],
         ];
 
         let light = [-1.0, 0.4, 0.9f32];
