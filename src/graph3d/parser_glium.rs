@@ -39,7 +39,7 @@ pub fn obstacle_parser_find_connecting_indices(
 
         i = i + 4;
     }
-    println!("obstacles {:?}", connecting_indices);
+    // println!("obstacles connecting indices {:?}", connecting_indices);
     Ok(connecting_indices)
 }
 
@@ -52,8 +52,9 @@ pub fn obstacle_parser_glium(filepath: &str) -> Result<Vec<Vertex>, Box<dyn std:
         .next()
         .expect("file is empty, no obstacle")?
         .parse()
-        .expect("Its not a number");
+        .expect("It's not a number");
     let mut obstacles = Vec::with_capacity(obstacle_len);
+
     for _ in 0..obstacle_len {
         let line = lines
             .next()

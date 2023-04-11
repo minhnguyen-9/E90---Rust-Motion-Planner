@@ -16,8 +16,6 @@ const MAX_ITERATIONS: usize = 10000;
 const SEGMENT_LENGTH: f32 = 0.1;
 const POINT_RADIUS: f32 = 0.1;
 
-// type Backend<'a> = SVGBackend<'a>;
-
 // fn point_is_free(obstacle_polygons: &Vec<Polygon<f64>>, point_coords: &Point<f64>) -> bool {
 //     let point = Point::new(point_coords.x(), point_coords.y());
 
@@ -120,11 +118,11 @@ fn main() {
 
         // Location takes into account that cuboid is created at the origin, hence the translation needs to be the mid point
         // of the cuboids.
-        let half_x = (x1 as f32 - x2 as f32) / 2.0;
+        let half_x = (x1 as f32 - x0 as f32) / 2.0;
         let half_y = (y1 as f32 - y0 as f32) / 2.0;
         let shape = Cuboid::new(Vector2::new(half_x, half_y));
         let location = Isometry2::new(Vector2::new(x0 as f32 + half_x, y0 as f32 + half_y), 0.0);
-
+        // println!("Box is {shape:?}  at {location:?}");
         obstacle_polygons.push((shape, location));
     }
 
