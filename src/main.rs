@@ -14,13 +14,15 @@ use robot_arm::graph_robot_arm;
 
 extern crate nalgebra as na;
 
-const MAX_ITERATIONS: usize = 10000;
+const MAX_ITERATIONS: usize = 100000;
 const SEGMENT_LENGTH: f32 = 0.1;
 const POINT_RADIUS: f32 = 0.1;
-const MAX_ANGLE: f32 = std::f32::consts::FRAC_PI_8;
-const ARM_LENGTH: f32 = 1.0;
-const ARM_WIDTH:f32 = 0.15;
-const ANCHOR_POS: [f32; 2] = [7.9, 4.0];
+const MAX_ANGLE: f32 = std::f32::consts::FRAC_PI_8/2.0;
+const ARM_LENGTH: f32 = 1.0; // make sure to change the arm pos in sync_data if you change this
+const ARM_WIDTH:f32 = 0.15; // make sure to change the arm pos in sync_data if you change this
+const ANCHOR_POS: [f32; 2] = [0.0, 4.0];
+const q_init:[f32;3] = [-0.1,0.9, -0.5f32];
+const q_goal:[f32;3] = [0.0, -1.6, -0.3f32];
 // fn point_is_free(obstacle_polygons: &Vec<Polygon<f64>>, point_coords: &Point<f64>) -> bool {
 //     let point = Point::new(point_coords.x(), point_coords.y());
 
@@ -54,44 +56,36 @@ fn point_is_free(
     true
 }
 
-// fn segment_is_free(
-//     obstacle_polygons: &Vec<Polygon<f64>>,
-//     start_coords: &Point<f64>,
-//     end_coords: &Point<f64>,
-// ) -> bool {
-//     let lstr = LineString::from(vec![*start_coords, *end_coords]);
-
-//     for p in obstacle_polygons {
-//         if p.intersects(&lstr) {
-//             return false;
-//         }
-//     }
-
-//     true
-// }
 fn segment_is_free(
     obstacle_polygons: &Vec<(Cuboid, Isometry2<f32>)>,
-    start_pos: &[f32;3],
     sampled_pos: &[f32;3],
 ) -> bool {
 
-    // // let point = Ball::new(POINT_RADIUS);
-    // let line = Segment::new(
-    //     na::Point2::new(point_from.x(), point_from.y()),
-    //     na::Point2::new(point_to.x(), point_to.y()),
-    // );
+    let arm  = Cuboid::new(Vector2::new(ARM_LENGTH, ARM_WIDTH));
 
-    let arm  = Cuboid::new(Vector2::new(ARM_WIDTH, ARM_LENGTH));
-    // for i in 0..3{
-    //     let absolute_zeros = Isometry2::new(Vector2::new(0.0, 0.0), point_to[i]);
-    // }
+    // let start_pos: [f32; 3] = [0.0, std::f32::consts::FRAC_PI_2, std::f32::consts::FRAC_PI_2];
 
-    //Arm is anchor at 0, 0
-    let arm0_pos = Isometry2::new(Vector2::new(ANCHOR_POS[0], ANCHOR_POS[1]), start_pos[0]);
-    let arm1_pos = arm0_pos * Isometry2::new(Vector2::new(0.0, 0.0), start_pos[1]);
-    let arm2_pos = arm1_pos * Isometry2::new(Vector2::new(0.0, 0.0), start_pos[2]);
-    let arm_segs = [arm0_pos, arm1_pos, arm2_pos];
+    let joint_from_midlink = Isometry2::new(Vector2::new(0.5*ARM_LENGTH, 0.0), 0.0);
 
+
+
+    //Arm is anchor at ANCHOR_POS
+    let world_from_joint0 = Isometry2::new(Vector2::new(ANCHOR_POS[0], ANCHOR_POS[1]), sampled_pos[0]);
+    let world_from_joint1 = world_from_joint0 * Isometry2::new(Vector2::new(ARM_LENGTH, 0.0), sampled_pos[1]);
+    let world_from_joint2 = world_from_joint1 * Isometry2::new(Vector2::new(ARM_LENGTH, 0.0), sampled_pos[2]);
+
+    let world_from_midlink0 =  world_from_joint0 * joint_from_midlink;
+    let world_from_midlink1 = world_from_joint1* joint_from_midlink;
+    let world_from_midlink2 = world_from_joint2* joint_from_midlink;
+
+    let arm_segs = [world_from_midlink0,world_from_midlink1,world_from_midlink2];
+
+    // println!("arm0_pos:\n{:}", world_from_midlink0.to_matrix());
+
+    // println!("arm1_pos:\n{:}", world_from_midlink1.to_matrix());
+    // println!("arm2_pos:\n{:}", world_from_midlink2.to_matrix());
+
+    // assert!(false);
 
     for i in 0..3{
         let arm_pos = arm_segs[i];
@@ -113,7 +107,7 @@ fn main() {
 
     let obstacles_coords =
         tests::obstacle_parser_geo(filepath).expect("can't parse for obstacle for geo");
-    println!("obstacles {:?}", obstacles_coords);
+    // println!("obstacles {:?}", obstacles_coords);
 
     // let whatever = parry2d_zucker::parry_tst()?;
 
@@ -126,12 +120,11 @@ fn main() {
     // let q_init = Point::new(1.0, 7.0);
     // let q_goal = Point::new(7.0, 1.0);
 
-    let (x1, x2, g1, g2) = obstacles_coords[0].clone();
+    // let (x1, x2, g1, g2) = obstacles_coords[0].clone();
 
     // let q_init = Point::new(x1 as f32, x2 as f32);
     // let q_goal = Point::new(g1 as f32, g2 as f32);
-    let q_init = [-1.7, 0.0, 1.0f32];
-    let q_goal = [1.2,0.2,0.3f32];
+
 
     let mut obstacle_polygons: Vec<(Cuboid, Isometry2<f32>)> = Vec::new();
 
@@ -155,10 +148,10 @@ fn main() {
         obstacle_polygons.push((shape, location));
     }
 
-    println!("polygons: {:?}", obstacle_polygons);
+    // println!("polygons: {:?}", obstacle_polygons);
     println!(
-        "should be ?: {}",
-        segment_is_free(&obstacle_polygons, &q_init, &q_goal)
+        "Goal should be true/ collision free: {}",
+        segment_is_free(&obstacle_polygons, &q_goal)
     );
 
     // tree_points = np.zeros((MAX_ITERATIONS, 2))
@@ -210,7 +203,7 @@ fn main() {
             // *p_closest_to_rand + diff * SEGMENT_LENGTH / dist_square.sqrt()
         };
 
-        if segment_is_free(&obstacle_polygons, p_closest_to_rand, &q_new) {
+        if segment_is_free(&obstacle_polygons, &q_new) {
             tree_points.push(q_new);
             parents.push(idx);
             if q_new == q_goal {
@@ -238,7 +231,7 @@ fn main() {
         path.push(p);
 
         // 3D graphing with glium
-        graph_robot_arm(path);
+        graph_robot_arm(path, ANCHOR_POS, ARM_WIDTH*25.0f32, ARM_LENGTH*25.0f32);
         println!("goal found");
     } else {
         println!("No goal");

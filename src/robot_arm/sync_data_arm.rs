@@ -7,7 +7,28 @@ use glium::implement_vertex;
 implement_vertex!(Vertex, position);
 pub const ROBOT_INDICES: [u16; 6] = [1, 2, 3,3,2,4u16];
 
+pub const ROBOT_STICK_INDICES: [u16; 2] = [1, 2u16];
+
 pub const INDICES2: [u16; 3] = [1, 2, 3u16];
+
+// pub const ROBOT: [Vertex; 5] = [
+//     Vertex {
+//         position: (0.0, 0.0, 0.0),
+//     }, // dummy vector because in the original model indices
+//     // start at 1
+//     Vertex {
+//         position: (-10.00, -10.00, -1.10804),
+//     },
+//     Vertex {
+//         position: (-10.0, 30.0, -1.10804),
+//     },
+//     Vertex {
+//         position: (10.0, -10.0, -1.10804),
+//     },
+//     Vertex {
+//         position: (10.0, 30.0, -1.10804),
+//     },
+// ];
 
 pub const ROBOT: [Vertex; 5] = [
     Vertex {
@@ -15,16 +36,29 @@ pub const ROBOT: [Vertex; 5] = [
     }, // dummy vector because in the original model indices
     // start at 1
     Vertex {
-        position: (-10.00, -10.00, -1.10804),
+        position: (0.00, -1.875, -1.10804),
     },
     Vertex {
-        position: (-10.0, 30.0, -1.10804),
+        position: (0.0, 1.875, -1.10804),
     },
+    Vertex {
+        position: (25.0, -1.875, -1.10804),
+    },
+    Vertex {
+        position: (25.0, 1.875, -1.10804),
+    },
+];
+
+pub const ROBOT_STICK: [Vertex; 3] = [
+    Vertex {
+        position: (0.0, 0.0, 0.0),
+    }, // dummy vector because in the original model indices
+    // start at 1
     Vertex {
         position: (10.0, -10.0, -1.10804),
     },
     Vertex {
-        position: (10.0, 30.0, -1.10804),
+        position: (10.0, 15.0, -1.10804),
     },
 ];
 
