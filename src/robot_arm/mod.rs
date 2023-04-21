@@ -5,7 +5,8 @@ mod sync_data_arm;
 mod parser_obstacle;
 const SCALE: f32 = 0.01;
 
-
+// Just some notes for myself. 
+// - Since we are using the perspective matrix, I changed the third to last value of the last row of every matrix to 2.0 instead of 0.0
 
 pub struct Point3 {
     pub x: f32,
@@ -42,7 +43,9 @@ fn convert_sampling_cord_to_glium_cords(cord: f32) -> f32{
 }
 
 
-pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_width_for_params: f32, arm_length: f32) {
+
+
+pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_length: f32) {
 // pub fn robot_arm_test() -> Result<(), Box<dyn std::error::Error>> {
     #[allow(unused_imports)]
     use glium::{glutin, Surface};
@@ -69,15 +72,15 @@ pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_width_for_params:
     )
     .unwrap();
 
-    // for the stick robot arm 
-    let robot_arm_stick = glium::VertexBuffer::new(&display, &sync_data_arm::ROBOT_STICK).unwrap();
-    // let normals = glium::VertexBuffer::new(&display, &sync_data_arm::NORMALS).unwrap();
-    let robot_arm_stick_indices = glium::IndexBuffer::new(
-        &display,
-        glium::index::PrimitiveType::LineStrip,
-        &sync_data_arm::ROBOT_STICK_INDICES,
-    )
-    .unwrap();
+    // for the stick robot arm, aka a line
+    // let robot_arm_stick = glium::VertexBuffer::new(&display, &sync_data_arm::ROBOT_STICK).unwrap();
+    // // let normals = glium::VertexBuffer::new(&display, &sync_data_arm::NORMALS).unwrap();
+    // let robot_arm_stick_indices = glium::IndexBuffer::new(
+    //     &display,
+    //     glium::index::PrimitiveType::LineStrip,
+    //     &sync_data_arm::ROBOT_STICK_INDICES,
+    // )
+    // .unwrap();
 
     // for start or goal end point
     let circular_position = glium::VertexBuffer::new(&display, &sync_data_arm::CIRCLE).unwrap();
@@ -115,8 +118,9 @@ pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_width_for_params:
         uniform mat4 matrix;
         uniform mat4 matrix2;
         uniform mat4 matrix3;
+        uniform mat4 perspective;
         void main() {
-            gl_Position =matrix* matrix2* matrix3* vec4(position, 1.0);
+            gl_Position = perspective * matrix* matrix2* matrix3* vec4(position, 1.0);
         }
     "#;
 
@@ -136,8 +140,9 @@ pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_width_for_params:
         in vec3 position;
         in vec3 normal;
         uniform mat4 matrix;
+        uniform mat4 perspective;
         void main() {
-            gl_Position = matrix * vec4(position, 1.0);
+            gl_Position = perspective * matrix * vec4(position, 1.0);
         }
         "#;
 
@@ -157,9 +162,10 @@ pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_width_for_params:
         in vec3 normal;
         out vec3 v_normal;
         uniform mat4 matrix;
+        uniform mat4 perspective;
         void main() {
             v_normal = transpose(inverse(mat3(matrix))) * normal;
-            gl_Position = matrix * vec4(position, 0.3);
+            gl_Position = perspective * matrix * vec4(position, 0.3);
         }
     "#;
 
@@ -193,10 +199,10 @@ pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_width_for_params:
     let anchor_pos = [convert_sampling_cord_to_glium_cords(anchor[0]), convert_sampling_cord_to_glium_cords( anchor[1])];
 
     let obstacle_matrix = [
-            [0.01, 0.0, 0.0, 0.0],
-            [0.0, 0.01, 0.0, 0.0],
-            [0.0, 0.0, 0.01, 0.0],
-            [0.0, 0.0, 0.0, 1.0f32],
+            [SCALE, 0.0, 0.0, 0.0],
+            [0.0, SCALE, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 2.0, 1.0f32],
         ];
 
     let matrix_start_circle = [
@@ -206,10 +212,11 @@ pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_width_for_params:
         [
             anchor_pos[0] * SCALE ,
             anchor_pos[1] * SCALE ,
-            0.0 * SCALE,
+            2.0,
             1.0f32,
         ],
     ];
+
 
 
 
@@ -238,11 +245,14 @@ pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_width_for_params:
         target.clear_color_and_depth((0.8, 0.8, 0.8, 0.8), 1.0);
 
 
-        let [t1, t2, t3] = path[path_index];
+        let [t1, t2, t3] = path[path_index]; // this is the right code
+
+        // let [t1, t2, t3] = [-0.5,0.9, -0.5f32];
+
 
         // let t1 = 0.0f32;
         // let t2 = std::f32::consts::FRAC_PI_2;
-        // let t3 = 1.0f32;
+        // let t3 = std::f32::consts::FRAC_PI_2;
 
         let arm_width = 0.0f32;
 
@@ -250,7 +260,7 @@ pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_width_for_params:
         [ t1.cos() * SCALE, t1.sin() * SCALE, 0.0, 0.0],
         [-t1.sin() * SCALE, t1.cos() * SCALE, 0.0, 0.0],
         [0.0, 0.0, SCALE, 0.0],
-        [anchor_pos[0] * SCALE, anchor_pos[1] * SCALE, 0.0, 1.0f32],
+        [anchor_pos[0] * SCALE, anchor_pos[1] * SCALE, 2.0, 1.0f32],
         ];
 
         //we don't need to scale again here because the first matrix already took care of it
@@ -274,9 +284,25 @@ pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_width_for_params:
             path_index -= 1;
         }
 
-        
-
         let light = [-1.0, 0.4, 0.9f32];
+
+        let perspective = {
+            let (width, height) = target.get_dimensions();
+            let aspect_ratio = height as f32 / width as f32;
+        
+            let fov: f32 = 3.141592 / 3.0;
+            let zfar = 1024.0;
+            let znear = 0.1;
+        
+            let f = 1.0 / (fov / 2.0).tan();
+        
+            [
+                [f *   aspect_ratio   ,    0.0,              0.0              ,   0.0],
+                [         0.0         ,     f ,              0.0              ,   0.0],
+                [         0.0         ,    0.0,  (zfar+znear)/(zfar-znear)    ,   1.0],
+                [         0.0         ,    0.0, -(2.0*zfar*znear)/(zfar-znear),   0.0],
+            ]
+        };
 
 
         let params = glium::DrawParameters {
@@ -285,17 +311,6 @@ pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_width_for_params:
                 write: true,
                 ..Default::default()
             },
-            ..Default::default()
-        };
-
-        let params_draw_line = glium::DrawParameters {
-            depth: glium::Depth {
-                test: glium::draw_parameters::DepthTest::IfLess,
-                write: true,
-                ..Default::default()
-            },
-            line_width: Some(0.2f32),
-
             ..Default::default()
         };
 
@@ -312,7 +327,7 @@ pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_width_for_params:
                 (&robot_arm, &normals),
                 &indices,
                 &program_robot_arm,
-                &uniform! {matrix: identity_matrix, matrix2: matrix1, matrix3: identity_matrix,  u_light: light},
+                &uniform! {matrix: identity_matrix, matrix2: matrix1, matrix3: identity_matrix,  u_light: light, perspective: perspective},
                 &params,
             )
             .unwrap();
@@ -323,7 +338,7 @@ pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_width_for_params:
                 (&robot_arm, &normals),
                 &indices,
                 &program_robot_arm,
-                &uniform! { matrix: matrix1, matrix2: matrix2,matrix3: identity_matrix, u_light: light},
+                &uniform! { matrix: matrix1, matrix2: matrix2,matrix3: identity_matrix, u_light: light,perspective: perspective},
                 &params,
             )
             .unwrap();
@@ -333,7 +348,7 @@ pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_width_for_params:
             (&robot_arm, &normals),
             &indices,
             &program_robot_arm,
-            &uniform! { matrix: matrix1, matrix2: matrix2, matrix3: matrix3, u_light: light},
+            &uniform! { matrix: matrix1, matrix2: matrix2, matrix3: matrix3, u_light: light,perspective: perspective},
             &params,
         )
         .unwrap();
@@ -357,7 +372,7 @@ pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_width_for_params:
             (&circular_position, &circular_normals),
             &circular_indices,
             &program_circle,
-            &uniform! { matrix: matrix_start_circle, u_light: light},
+            &uniform! { matrix: matrix_start_circle, u_light: light, perspective: perspective},
             &params,
         )
         .unwrap();
@@ -368,7 +383,7 @@ pub fn graph_robot_arm(path: Vec<[f32;3]>, anchor:[f32;2], arm_width_for_params:
             (&obstacle_vertices, &normals),
             &obstacle_indices,
             &program_obstacle,
-            &uniform! { matrix: obstacle_matrix, u_light: light},
+            &uniform! { matrix: obstacle_matrix, u_light: light, perspective: perspective},
             &params,
         )
         .unwrap();
