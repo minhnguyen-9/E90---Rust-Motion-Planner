@@ -70,7 +70,6 @@ pub fn graph3d<T: As3d + 'static>(path: Vec<T>) {
     .unwrap();
     let normals2 = glium::VertexBuffer::new(&display, &sync_data::NORMALS2).unwrap();
 
-
     let circular_position = glium::VertexBuffer::new(&display, &CIRCLE).unwrap();
     let circular_normals = glium::VertexBuffer::new(&display, &sync_data::CIRCLE_NORMALS).unwrap();
     let circular_indices = glium::IndexBuffer::new(
@@ -104,8 +103,6 @@ pub fn graph3d<T: As3d + 'static>(path: Vec<T>) {
             color = vec4(mix(dark_color, regular_color, brightness), 0.3);
         }
     "#;
-
-    
 
     let vertex_shader_robot = r#"
 
@@ -159,47 +156,55 @@ pub fn graph3d<T: As3d + 'static>(path: Vec<T>) {
         }
     "#;
 
-    let program =
-        glium::Program::from_source(&display, vertex_shader_obstacle, fragment_shader_obstacle, None)
-            .unwrap();
+    let program = glium::Program::from_source(
+        &display,
+        vertex_shader_obstacle,
+        fragment_shader_obstacle,
+        None,
+    )
+    .unwrap();
 
     let program2 =
         glium::Program::from_source(&display, vertex_shader_robot, fragment_shader_robot, None)
             .unwrap();
 
-    let program_circle =
-    glium::Program::from_source(&display, vertex_shader_goal_circle, fragment_shader_goal_circle, None)
-        .unwrap();
+    let program_circle = glium::Program::from_source(
+        &display,
+        vertex_shader_goal_circle,
+        fragment_shader_goal_circle,
+        None,
+    )
+    .unwrap();
 
     // let mut path_index = 0;
     let mut path_index = path.len() - 1;
 
     let (x, y, z) = path[0].as_3d();
-        let matrix_goal_circle = [
-            [0.01, 0.0, 0.0, 0.0],
-            [0.0, 0.01, 0.0, 0.0],
-            [0.0, 0.0, 0.01, 0.0],
-            [
-                (-100.0 + x * 25.0) * SCALE ,
-                (-100.0 + y * 25.0) * SCALE ,
-                z * SCALE,
-                1.0f32,
-            ],
-        ];
+    let matrix_goal_circle = [
+        [0.01, 0.0, 0.0, 0.0],
+        [0.0, 0.01, 0.0, 0.0],
+        [0.0, 0.0, 0.01, 0.0],
+        [
+            (-100.0 + x * 25.0) * SCALE,
+            (-100.0 + y * 25.0) * SCALE,
+            z * SCALE,
+            1.0f32,
+        ],
+    ];
 
-        let start_idx = path.len() - 1;
-        let (x, y, z) = path[start_idx].as_3d();
-        let matrix_start_circle = [
-            [0.01, 0.0, 0.0, 0.0],
-            [0.0, 0.01, 0.0, 0.0],
-            [0.0, 0.0, 0.01, 0.0],
-            [
-                (-100.0 + x * 25.0) * SCALE ,
-                (-100.0 + y * 25.0) * SCALE ,
-                z * SCALE,
-                1.0f32,
-            ],
-        ];
+    let start_idx = path.len() - 1;
+    let (x, y, z) = path[start_idx].as_3d();
+    let matrix_start_circle = [
+        [0.01, 0.0, 0.0, 0.0],
+        [0.0, 0.01, 0.0, 0.0],
+        [0.0, 0.0, 0.01, 0.0],
+        [
+            (-100.0 + x * 25.0) * SCALE,
+            (-100.0 + y * 25.0) * SCALE,
+            z * SCALE,
+            1.0f32,
+        ],
+    ];
 
     event_loop.run(move |event, _, control_flow| {
         let next_frame_time =
@@ -251,11 +256,9 @@ pub fn graph3d<T: As3d + 'static>(path: Vec<T>) {
                 1.0f32,
             ],
         ];
-        
 
         let light = [-1.0, 0.4, 0.9f32];
-        let circle_light = [-1.0, 0.4, 0.9f32]; 
-
+        let circle_light = [-1.0, 0.4, 0.9f32];
 
         let params = glium::DrawParameters {
             depth: glium::Depth {
@@ -276,7 +279,7 @@ pub fn graph3d<T: As3d + 'static>(path: Vec<T>) {
                 &params,
             )
             .unwrap();
-        
+
         // for the goal circular disk
         target
             .draw(

@@ -1,6 +1,6 @@
 use glium::implement_vertex;
 use std::fs::File;
-use std::io::{ BufRead, BufReader};
+use std::io::{BufRead, BufReader};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vertex {
